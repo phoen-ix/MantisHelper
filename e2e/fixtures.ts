@@ -126,6 +126,11 @@ export const test = base.extend<{ addon: Addon; context: BrowserContext; stubbed
           'devtools.debugger.prompt-connection': false,
           // The event page must not unload between a test's calls into it.
           'extensions.background.idle.timeout': 3_600_000,
+          // The fake sites go to a closed local port instead of the network: no DNS query,
+          // and a tab without a route fails at once.
+          'network.proxy.type': 2,
+          'network.proxy.autoconfig_url':
+            'data:text/plain,function FindProxyForURL(u, h) { return dnsDomainIs(h, ".example.com") ? "PROXY 127.0.0.1:9" : "DIRECT" }',
         },
       })
       await expect.poll(() => existsSync(socketPath)).toBe(true)
