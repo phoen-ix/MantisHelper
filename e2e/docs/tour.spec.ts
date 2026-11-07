@@ -13,12 +13,12 @@ import { stubBrowser } from '../stub'
  *
  * Playwright cannot load an extension into Firefox, so the pages are opened
  * from data/ as files, and stubBrowser() (../stub.ts) stands in for the WebExtension
- * `browser` API they call. The context menu itself is browser UI that no
+ * `chrome` API they call. The context menu itself is browser UI that no
  * screenshot can show; the hint page is opened the way the menu opens it,
  * through background.js's click handler. */
 
 // The stub's globals, for page.evaluate().
-declare const browser: any
+declare const chrome: any
 declare const menuClick: (info: object, tab: object) => Promise<void>
 declare const createdTabs: { url: string }[]
 
@@ -102,7 +102,7 @@ test('options: saved', async ({ page }) => {
   await expect(page.locator('#status')).toHaveText('Options saved.')
   await expect(page.getByLabel('Mantis URL:')).toHaveValue(`${MANTIS_URL}view.php?id=`)
   await expect(page.locator('#preview')).toHaveText(`Issue 1234 will open ${MANTIS_URL}view.php?id=1234`)
-  expect(await page.evaluate(() => browser.storage.sync.get('customUrl'))).toEqual({
+  expect(await page.evaluate(() => chrome.storage.sync.get('customUrl'))).toEqual({
     customUrl: `${MANTIS_URL}view.php?id=`,
   })
   await shoot(page, 'options-saved', { around: '#optionsForm' })
@@ -142,11 +142,11 @@ test('context menu: no single issue number in the selection', async ({ page }) =
   await page.addScriptTag({ path: path.join(ROOT, 'data/background.js') })
   // What a click on "Open “Issues 12 and 34” in Mantis" does.
   const tabs = await page.evaluate(async () => {
-    await menuClick({ menuItemId: 'openInMantis', selectionText: 'Issues 12 and 34' }, { id: 1, windowId: 1 })
+    await menuClick({ menuItemId: 'openInMantis', selectionText: 'Issues 12 and 34' }, { id: 1, index: 0, windowId: 1 })
     return createdTabs
   })
   const hint = new URL('invalid_selection.html', OPTIONS).href
-  expect(tabs).toEqual([{ url: hint, windowId: 1, openerTabId: 1 }])
+  expect(tabs).toEqual([{ url: hint, windowId: 1, index: 1, openerTabId: 1 }])
   await page.goto(hint)
   await expect(page.getByRole('heading', { name: 'Invalid selection' })).toBeVisible()
   await shoot(page, 'menu-invalid-selection', { contentOnly: true })

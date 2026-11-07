@@ -1,4 +1,4 @@
-/** The part of the WebExtension `browser` API that the pages in data/ use, for
+/** The part of the WebExtension `chrome` API that the pages in data/ use, for
  * opening them as files: storage with `customUrl` stored (undefined: never
  * configured), the menu's click handler as `menuClick(info, tab)`, the
  * onInstalled and onStartup listeners as `installed()` and `started()`, the contextMenus calls it makes in
@@ -8,13 +8,14 @@ export function stubBrowser(customUrl?: string) {
   const store: Record<string, unknown> = customUrl === undefined ? {} : { customUrl }
   const listeners: Record<string, (...args: any[]) => unknown> = {}
   const event = (name: string) => ({ addListener: (fn: (...args: any[]) => unknown) => (listeners[name] = fn) })
+  const menus = new Set<string>()
   const w = window as any
   w.createdTabs = []
   w.menuCalls = []
   w.installed = () => listeners.installed()
   w.started = () => listeners.started()
   w.menuClick = (info: object, tab: object) => listeners.menuClicked(info, tab)
-  w.browser = {
+  w.chrome = {
     storage: {
       sync: {
         get: async (key: string) => (key in store ? { [key]: store[key] } : {}),
@@ -28,8 +29,15 @@ export function stubBrowser(customUrl?: string) {
     },
     contextMenus: {
       onClicked: event('menuClicked'),
-      removeAll: async () => void w.menuCalls.push(['removeAll']),
-      create: (props: object) => void w.menuCalls.push(['create', props]),
+      // As in the browser, a second menu with the same id fails: runtime.lastError in the callback.
+      create: (props: { id: string }, done?: () => void) => {
+        w.menuCalls.push(['create', props])
+        w.chrome.runtime.lastError = menus.has(props.id) ? { message: `ID already exists: ${props.id}` } : undefined
+        menus.add(props.id)
+        done?.()
+        w.chrome.runtime.lastError = undefined
+      },
+      update: async (id: string, props: object) => void w.menuCalls.push(['update', id, props]),
     },
     windows: { get: async () => ({ type: 'normal' }) },
     tabs: { create: async (props: { url: string }) => void w.createdTabs.push(props) },
@@ -40,8 +48,9 @@ export function stubBrowser(customUrl?: string) {
  * made, as a busy browser does; `storageReads` counts the answered ones. Runs
  * after stubBrowser (page.addInitScript, in that order). */
 export function slowStorageReads(ms: number) {
+  const menus = new Set<string>()
   const w = window as any
-  const sync = w.browser.storage.sync
+  const sync = w.chrome.storage.sync
   const get = sync.get
   w.storageReads = 0
   sync.get = (key: string) =>

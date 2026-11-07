@@ -1,7 +1,7 @@
 import { MANTIS, expect, test } from '../fixtures'
 
 /* The options page (data/options.html): what a user sees, types and clicks.
- * The page is opened as a file with a stubbed `browser.storage` (stub.ts);
+ * The page is opened as a file with a stubbed `chrome.storage` (stub.ts);
  * menu.spec.ts saves through the real page of the installed add-on. */
 
 const HINT = /^Enter the address of your Mantis installation/
@@ -37,7 +37,7 @@ for (const [typed, prefix] of [
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(page.getByRole('status')).toHaveText('Options saved.')
     await expect(page.getByLabel('Mantis URL:')).toHaveValue(prefix)
-    expect(await page.evaluate(() => browser.storage.sync.get('customUrl'))).toEqual({ customUrl: prefix })
+    expect(await page.evaluate(() => chrome.storage.sync.get('customUrl'))).toEqual({ customUrl: prefix })
   })
 }
 
@@ -51,7 +51,7 @@ for (const typed of ['mantis.example.com', 'ftp://mantis.example.com/', 'https:/
     await page.getByRole('button', { name: 'Save' }).click()
     await expect(input).toHaveValue(typed)
     await expect(page.getByRole('status')).toHaveText('')
-    expect(await page.evaluate(() => browser.storage.sync.get('customUrl'))).toEqual({})
+    expect(await page.evaluate(() => chrome.storage.sync.get('customUrl'))).toEqual({})
   })
 }
 
@@ -61,7 +61,7 @@ test('an empty field is required, and Save stores nothing', async ({ stubbedPage
   await page.getByRole('button', { name: 'Save' }).click()
   expect(await input.evaluate((el: HTMLInputElement) => el.validity.valueMissing)).toBe(true)
   await expect(page.getByRole('status')).toHaveText('')
-  expect(await page.evaluate(() => browser.storage.sync.get('customUrl'))).toEqual({})
+  expect(await page.evaluate(() => chrome.storage.sync.get('customUrl'))).toEqual({})
 })
 
 test('Enter saves, and typing again clears the confirmation', async ({ stubbedPage }) => {

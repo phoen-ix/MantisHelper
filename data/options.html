@@ -33,10 +33,16 @@
     input {
       padding: 8px;
       margin-bottom: 8px;
-      border: 1px solid #8f8f9d;
+      /* The browser's own control border: Chrome's, then Firefox's */
+      border: 1px solid #767676;
       border-radius: 4px;
       width: 100%;
       box-sizing: border-box;
+    }
+    @supports (-moz-appearance: none) {
+      input {
+        border-color: #8f8f9d;
+      }
     }
     #preview {
       margin: 0 0 20px;

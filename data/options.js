@@ -1,3 +1,4 @@
+/* global normalizeMantisUrl, LEGACY_DEFAULT_URL -- mantis.js */
 const HINT = 'Enter the address of your Mantis installation, e.g. https://mantis.example.com/';
 
 const form = document.getElementById('optionsForm');
@@ -18,7 +19,7 @@ function update() {
 let typed = false;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  const { customUrl } = await browser.storage.sync.get('customUrl');
+  const { customUrl } = await chrome.storage.sync.get('customUrl');
   if (typed) {
     return;
   }
@@ -40,6 +41,6 @@ form.addEventListener('submit', async (e) => {
   }
   input.value = customUrl;
   update();
-  await browser.storage.sync.set({ customUrl });
+  await chrome.storage.sync.set({ customUrl });
   statusMessage.textContent = 'Options saved.';
 });

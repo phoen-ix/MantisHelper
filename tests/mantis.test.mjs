@@ -5,8 +5,8 @@ import { readFileSync } from 'node:fs'
 import test from 'node:test'
 import vm from 'node:vm'
 
-// A classic script for the background page and the options page: its functions
-// are globals. A fresh context has no URL (the browser's), so it gets Node's.
+// A classic script for the background (in Chrome a service worker) and the options
+// page: its functions are globals. A fresh context has no URL (the browser's), so it gets Node's.
 const { findIssueId, normalizeMantisUrl, LEGACY_DEFAULT_URL } = vm.runInNewContext(
   `${readFileSync(new URL('../data/mantis.js', import.meta.url), 'utf8')}
   ({ findIssueId, normalizeMantisUrl, LEGACY_DEFAULT_URL })`,

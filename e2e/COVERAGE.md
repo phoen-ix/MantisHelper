@@ -5,12 +5,12 @@ Inventory of what Mantis Helper does for a user, each mapped to the test that dr
 Run the suite with `scripts/e2e.sh`.
 
 Extraction (2026-10-31, 24 items: manifest pages, scripts and permissions, the pages in `data/`,
-every listener and `browser.*` call):
+every listener and `chrome.*` call):
 
 ```bash
 node -e 'const m=require("./manifest.json");console.log(["options_ui: "+m.options_ui.page,...m.background.scripts.map(s=>"background: "+s),...m.permissions.map(p=>"permission: "+p)].join("\n"))'
 ls data/*.html
-grep -noE "browser\.[a-zA-Z.]+(\.addListener)?\(|addEventListener\('[A-Za-z]+'|function [a-zA-Z]+" data/background.js data/options.js
+grep -noE "chrome\.[a-zA-Z.]+(\.addListener)?\(|addEventListener\('[A-Za-z]+'|function [a-zA-Z]+" data/background.js data/options.js
 ```
 
 The add-on has no accounts and no roles; its states are the stored Mantis URL: not configured,
@@ -20,15 +20,15 @@ and an unusable URL. It has one language (English) and no dark styles.
 Two layers: **installed** = the add-on loaded into Firefox as a temporary add-on
 (`fixtures.ts`; real storage, tabs, windows, containers, the real click handler, errors from any
 of its pages fail the test); **file** = a page from `data/` opened as a file with a stubbed
-`browser` API (`stub.ts`), where Playwright can type and click.
+`chrome` API (`stub.ts`), where Playwright can type and click.
 
 Item → rows: `options_ui`, `options.html`, `storage`, `options.js` (`update`, `DOMContentLoaded`,
 `input`, `submit`, `storage.sync.get/set`) → "Options page"; `invalid_selection.html` → "Pages";
-`mantis.js`, `background.js` → "Background page"; `contextMenus`, `onInstalled`, `onStartup`, `setUpMenu`, `removeAll`,
-`create` → "Context menu" (first four rows); `onClicked` (also the first row), `handleMenuClick`, `storage.sync.get`,
+`mantis.js`, `background.js` → "Background page"; `contextMenus`, `onInstalled`, `onStartup`, `setUpMenu`, `create`,
+`update`, `runtime.lastError` → "Context menu" (first five rows); `onClicked` (also the first row), `handleMenuClick`, `storage.sync.get`,
 `openOptionsPage`, `getURL`, `tabs.create`, `openBesideTab`, `windows.get`, `tabs.group` → "Context menu" (the rest).
 
-Totals: **29 rows: ✅ 23, ❌ 6** — (c) 2, (d) 3, (e) 1.
+Totals: **30 rows: ✅ 24, ❌ 6** — (c) 2, (d) 3, (e) 1.
 
 ## Pages (sweep)
 
@@ -43,7 +43,8 @@ Totals: **29 rows: ✅ 23, ❌ 6** — (c) 2, (d) 3, (e) 1.
 | Item | Test |
 |---|---|
 | Installed add-on: the menu id `openInMantis` exists, `runtime.onStartup` → `setUpMenu`, `contextMenus.onClicked` → `handleMenuClick` | ✅ `menu.spec.ts › the menu is registered when the add-on is installed` |
-| `runtime.onInstalled` and `runtime.onStartup` → `contextMenus.removeAll`, then `create` `{id: 'openInMantis', title: 'Open “%s” in Mantis', contexts: ['selection']}`, each time they fire (file layer, recorded calls) | ✅ `menu.spec.ts › onInstalled and onStartup clear the menus, then create “Open “%s” in Mantis” for selections, every time` |
+| Installed add-on: `setUpMenu` while the menu exists → `create` fails, `runtime.lastError` is checked, `update` | ✅ `menu.spec.ts › setting the menu up again while it exists updates it` |
+| `runtime.onInstalled` and `runtime.onStartup` → `contextMenus.create` `{id: 'openInMantis', title: 'Open “%s” in Mantis', contexts: ['selection']}`, or `update` when the id exists, each time they fire (file layer, recorded calls) | ✅ `menu.spec.ts › onInstalled and onStartup create “Open “%s” in Mantis” for selections, or update it when it exists` |
 | The entry in Firefox's context menu as the browser draws it, the selection in its title | ❌ (d) browser UI: Playwright cannot open Firefox's context menu. What the add-on asks for is the row above; the handler it calls is driven below. |
 | Firefox itself firing `onInstalled` after a browser update | ❌ (d) Firefox fires it with reason `browser_update` only on a real browser update; reinstalling a temporary add-on unloads its menus first. The handler's response to a second firing is the `onInstalled` row above (`onStartup` likewise: a restart of the temporary add-on's browser ends the test session). |
 | Selection with one issue number → issue opens next to its tab, same container (`1234`, `#1234`, `0001234`, `Issue #1234: Fix login bug`, `0001234: Fix login bug`, `See #1234 and 56.`) | ✅ `menu.spec.ts › a configured add-on › “<selection>” opens issue 1234 next to its tab, in its container` (6) |

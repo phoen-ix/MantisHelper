@@ -14,14 +14,14 @@ import { slowStorageReads, stubBrowser } from './stub'
  * starts Firefox with its remote debugging server on a Unix socket and installs
  * the add-on over that protocol as a temporary add-on, the way `web-ext run`
  * and about:debugging do. The same connection runs code in the add-on's pages:
- * the background page (browser.* calls, the menu's click handler) and the
+ * the background page (browser.* and chrome.* calls, the menu's click handler) and the
  * options and hint pages the add-on opens, which Playwright cannot drive. An
  * error in any of them fails the test. Every test gets a fresh browser context
  * (in Firefox: a container) and empty storage. Fake sites on *.example.com are
  * served by routes, so nothing reaches the network.
  *
  * `stubbedPage`: the add-on's pages opened from data/ as files, with a stub of
- * the `browser` API (stub.ts), for what a user types and clicks in them. */
+ * the `chrome` API (stub.ts), for what a user types and clicks in them. */
 
 export const MANTIS = 'https://mantis.example.com/'
 export const SOURCE = 'https://intranet.example.com/notes'
@@ -226,6 +226,8 @@ export { expect }
 // The add-on's API, in addon.background/page(...).evaluate().
 declare global {
   const browser: any
+  const chrome: any
+  function setUpMenu(): void
   function handleMenuClick(info: object, tab: unknown): Promise<void>
 }
 

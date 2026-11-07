@@ -15,15 +15,25 @@ test('the menu is registered when the add-on is installed', async ({ addon }) =>
   await expect(addon.background.evaluate(() => browser.contextMenus.update('noSuchMenu', {}))).rejects.toThrow()
   await addon.background.evaluate(() => browser.contextMenus.update('openInMantis', {}))
   expect(await addon.background.evaluate(() => [
-    browser.runtime.onStartup.hasListener(setUpMenu),
-    browser.contextMenus.onClicked.hasListener(handleMenuClick),
+    chrome.runtime.onStartup.hasListener(setUpMenu),
+    chrome.contextMenus.onClicked.hasListener(handleMenuClick),
   ])).toEqual([true, true])
+})
+
+// Firefox still has the menu when onInstalled fires after a browser update: the
+// duplicate id turns into an update (an unchecked runtime.lastError would fail the test).
+test('setting the menu up again while it exists updates it', async ({ addon }) => {
+  await addon.background.evaluate(async () => {
+    setUpMenu()
+    // Answered after create(), so its callback has run.
+    await chrome.contextMenus.update('openInMantis', {})
+  })
 })
 
 // What the menu is, and that Firefox firing onInstalled again (after a browser
 // update) or onStartup (a restart) does not add a second one: background.js in a
 // page with the stubbed API (stub.ts), which records the contextMenus calls.
-test('onInstalled and onStartup clear the menus, then create “Open “%s” in Mantis” for selections, every time', async ({ stubbedPage }) => {
+test('onInstalled and onStartup create “Open “%s” in Mantis” for selections, or update it when it exists', async ({ stubbedPage }) => {
   const page = await stubbedPage('options.html')
   await page.addScriptTag({ path: path.join(ROOT, 'data/background.js') })
   const calls = await page.evaluate(async () => {
@@ -33,8 +43,10 @@ test('onInstalled and onStartup clear the menus, then create “Open “%s” in
     await w.started()
     return w.menuCalls
   })
-  const create = ['create', { id: 'openInMantis', title: 'Open “%s” in Mantis', contexts: ['selection'] }]
-  expect(calls).toEqual([['removeAll'], create, ['removeAll'], create, ['removeAll'], create])
+  const menu = { title: 'Open “%s” in Mantis', contexts: ['selection'] }
+  const create = ['create', { id: 'openInMantis', ...menu }]
+  const update = ['update', 'openInMantis', menu]
+  expect(calls).toEqual([create, create, update, create, update])
 })
 
 test.describe('a configured add-on', () => {
