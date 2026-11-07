@@ -14,23 +14,27 @@ test('the menu is registered when the add-on is installed', async ({ addon }) =>
   // update() fails for a menu id that does not exist.
   await expect(addon.background.evaluate(() => browser.contextMenus.update('noSuchMenu', {}))).rejects.toThrow()
   await addon.background.evaluate(() => browser.contextMenus.update('openInMantis', {}))
-  expect(await addon.background.evaluate(() => browser.contextMenus.onClicked.hasListener(handleMenuClick))).toBe(true)
+  expect(await addon.background.evaluate(() => [
+    browser.runtime.onStartup.hasListener(setUpMenu),
+    browser.contextMenus.onClicked.hasListener(handleMenuClick),
+  ])).toEqual([true, true])
 })
 
 // What the menu is, and that Firefox firing onInstalled again (after a browser
-// update) does not add a second one: background.js in a page with the stubbed
-// API (stub.ts), which records the contextMenus calls.
-test('onInstalled clears the menus, then creates “Open “%s” in Mantis” for selections, every time', async ({ stubbedPage }) => {
+// update) or onStartup (a restart) does not add a second one: background.js in a
+// page with the stubbed API (stub.ts), which records the contextMenus calls.
+test('onInstalled and onStartup clear the menus, then create “Open “%s” in Mantis” for selections, every time', async ({ stubbedPage }) => {
   const page = await stubbedPage('options.html')
   await page.addScriptTag({ path: path.join(ROOT, 'data/background.js') })
   const calls = await page.evaluate(async () => {
     const w = window as any
     await w.installed()
     await w.installed()
+    await w.started()
     return w.menuCalls
   })
   const create = ['create', { id: 'openInMantis', title: 'Open “%s” in Mantis', contexts: ['selection'] }]
-  expect(calls).toEqual([['removeAll'], create, ['removeAll'], create])
+  expect(calls).toEqual([['removeAll'], create, ['removeAll'], create, ['removeAll'], create])
 })
 
 test.describe('a configured add-on', () => {
@@ -89,6 +93,20 @@ test.describe('a configured add-on', () => {
     expect(await addon.background.evaluate((id) => browser.windows.get(id), opened[0].windowId)).toMatchObject({ type: 'normal' })
     await expect.poll(() => addon.tabUrls()).toContain(ISSUE)
   })
+
+  // Tab id -1 (browser.tabs.TAB_ID_NONE): a tab-less place such as devtools. A
+  // window that has closed since the click: windows.get fails.
+  for (const [where, tab] of [
+    ['outside of a tab (tab id -1)', { id: -1, index: -1, windowId: -1 }],
+    ['in a window that has closed since', { id: 1, index: 0, windowId: 999999 }],
+  ] as const) {
+    test(`a selection ${where} opens the issue in a new tab`, async ({ addon, context }) => {
+      await sourcePage(addon, context)
+      const opened = await newTabs(addon, () => clickMenu(addon, '#1234', tab))
+      expect(opened).toHaveLength(1)
+      await expect.poll(() => addon.tabUrls()).toContain(ISSUE)
+    })
+  }
 
   test('another menu item of the browser is ignored', async ({ addon, context }) => {
     const { tab } = await sourcePage(addon, context)

@@ -1,7 +1,7 @@
 /** The part of the WebExtension `browser` API that the pages in data/ use, for
  * opening them as files: storage with `customUrl` stored (undefined: never
  * configured), the menu's click handler as `menuClick(info, tab)`, the
- * onInstalled listener as `installed()`, the contextMenus calls it makes in
+ * onInstalled and onStartup listeners as `installed()` and `started()`, the contextMenus calls it makes in
  * `menuCalls` and the tabs the click handler creates in `createdTabs`. Runs in
  * the page, before its scripts (page.addInitScript). */
 export function stubBrowser(customUrl?: string) {
@@ -12,6 +12,7 @@ export function stubBrowser(customUrl?: string) {
   w.createdTabs = []
   w.menuCalls = []
   w.installed = () => listeners.installed()
+  w.started = () => listeners.started()
   w.menuClick = (info: object, tab: object) => listeners.menuClicked(info, tab)
   w.browser = {
     storage: {
@@ -22,6 +23,7 @@ export function stubBrowser(customUrl?: string) {
     },
     runtime: {
       onInstalled: event('installed'),
+      onStartup: event('started'),
       getURL: (p: string) => new URL(`../${p}`, location.href).href,
     },
     contextMenus: {
