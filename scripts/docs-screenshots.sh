@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Regenerate the docs screenshots: run the docs tour (e2e/docs/) in headless
-# Firefox against the extension's pages in data/.
+# Firefox against the pages of the built add-on (dist/firefox/data/).
 #
 #   scripts/docs-screenshots.sh [outdir]      # default: docs/screenshots
 #
@@ -15,6 +15,7 @@ OUT="${1:-$ROOT/docs/screenshots}"
 OUT="$(mkdir -p "$OUT" && cd "$OUT" && pwd)"
 ARTIFACTS="${ARTIFACTS:-$(mktemp -d)}"
 
+node "$ROOT/scripts/build.mjs"
 cd "$ROOT/e2e"
 DOCS_SCREENSHOT_DIR="$OUT" npx playwright test -c playwright.docs.config.ts --output "$ARTIFACTS/test-results"
 echo "docs-screenshots: $(find "$OUT" -name '*.png' | wc -l) PNGs in $OUT"

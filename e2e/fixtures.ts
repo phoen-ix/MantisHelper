@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, rmSync } from 'node:fs'
 import net from 'node:net'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
@@ -20,12 +20,14 @@ import { slowStorageReads, stubBrowser } from './stub'
  * (in Firefox: a container) and empty storage. Fake sites on *.example.com are
  * served by routes, so nothing reaches the network.
  *
- * `stubbedPage`: the add-on's pages opened from data/ as files, with a stub of
+ * `stubbedPage`: the add-on's pages opened from its data/ as files, with a stub of
  * the `chrome` API (stub.ts), for what a user types and clicks in them. */
 
 export const MANTIS = 'https://mantis.example.com/'
 export const SOURCE = 'https://intranet.example.com/notes'
 export const ROOT = fileURLToPath(new URL('..', import.meta.url))
+/** The add-on as it ships: `node scripts/build.mjs` (scripts/e2e.sh runs it). */
+export const ADDON_DIR = path.join(ROOT, 'dist/firefox')
 
 const ADDON_ID = 'mantis-helper@monumental.at'
 
@@ -114,9 +116,6 @@ export const test = base.extend<{ addon: Addon; context: BrowserContext; stubbed
   addonBrowser: [
     async ({ launchOptions }, use) => {
       const dir = mkdtempSync(path.join(tmpdir(), 'mantis-helper-e2e-'))
-      // What ships (package.json webExt.ignoreFiles), not the checkout with e2e/node_modules.
-      const addonDir = path.join(dir, 'addon')
-      for (const p of ['manifest.json', 'data', 'icons']) cpSync(path.join(ROOT, p), path.join(addonDir, p), { recursive: true })
       const socketPath = path.join(dir, 'rdp.sock')
       const browser = await firefox.launch({
         ...launchOptions,
@@ -138,7 +137,7 @@ export const test = base.extend<{ addon: Addon; context: BrowserContext; stubbed
       const rdp = new Rdp(socket)
       await rdp.next((p) => p.applicationType === 'browser')
       const { addonsActor } = await rdp.request({ to: 'root', type: 'getRoot' })
-      await rdp.request({ to: addonsActor, type: 'installTemporaryAddon', addonPath: addonDir })
+      await rdp.request({ to: addonsActor, type: 'installTemporaryAddon', addonPath: ADDON_DIR })
       const { addons } = await rdp.request({ to: 'root', type: 'listAddons' })
       const descriptor = addons.find((a: Packet) => a.id === ADDON_ID)
       const base = new URL('.', descriptor.manifestURL).href
@@ -214,7 +213,7 @@ export const test = base.extend<{ addon: Addon; context: BrowserContext; stubbed
     await use(async (file, customUrl, loadDelayMs) => {
       await page.addInitScript(stubBrowser, customUrl)
       if (loadDelayMs) await page.addInitScript(slowStorageReads, loadDelayMs)
-      await page.goto(pathToFileURL(path.join(ROOT, 'data', file)).href)
+      await page.goto(pathToFileURL(path.join(ADDON_DIR, 'data', file)).href)
       return page
     })
     expect(errors, 'page errors').toEqual([])

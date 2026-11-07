@@ -1,4 +1,7 @@
+dist/
 *.xpi
 *.zip
+*.crx
+*.pem
 web-ext-artifacts/
 node_modules/

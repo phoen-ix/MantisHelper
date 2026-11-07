@@ -1,0 +1,7 @@
+{
+  "background": {
+    "service_worker": "data/background.js"
+  },
+  "options_page": "data/options.html",
+  "minimum_chrome_version": "99"
+}

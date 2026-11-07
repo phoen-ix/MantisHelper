@@ -1,6 +1,6 @@
 import path from 'node:path'
 
-import { MANTIS, ROOT, SOURCE, clickMenu, expect, newTabs, sourcePage, storeUrl, test } from '../fixtures'
+import { ADDON_DIR, MANTIS, SOURCE, clickMenu, expect, newTabs, sourcePage, storeUrl, test } from '../fixtures'
 
 /* The context menu "Open “<selection>” in Mantis" of the installed add-on: what
  * its click handler (background.js) opens for a selection, and where. Firefox's
@@ -35,7 +35,7 @@ test('setting the menu up again while it exists updates it', async ({ addon }) =
 // page with the stubbed API (stub.ts), which records the contextMenus calls.
 test('onInstalled and onStartup create “Open “%s” in Mantis” for selections, or update it when it exists', async ({ stubbedPage }) => {
   const page = await stubbedPage('options.html')
-  await page.addScriptTag({ path: path.join(ROOT, 'data/background.js') })
+  await page.addScriptTag({ path: path.join(ADDON_DIR, 'data/background.js') })
   const calls = await page.evaluate(async () => {
     const w = window as any
     await w.installed()

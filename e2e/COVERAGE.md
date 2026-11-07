@@ -8,7 +8,7 @@ Extraction (2026-10-31, 24 items: manifest pages, scripts and permissions, the p
 every listener and `chrome.*` call):
 
 ```bash
-node -e 'const m=require("./manifest.json");console.log(["options_ui: "+m.options_ui.page,...m.background.scripts.map(s=>"background: "+s),...m.permissions.map(p=>"permission: "+p)].join("\n"))'
+node scripts/build.mjs && node -e 'const m=require("./dist/firefox/manifest.json");console.log(["options_ui: "+m.options_ui.page,...m.background.scripts.map(s=>"background: "+s),...m.permissions.map(p=>"permission: "+p)].join("\n"))'
 ls data/*.html
 grep -noE "chrome\.[a-zA-Z.]+(\.addListener)?\(|addEventListener\('[A-Za-z]+'|function [a-zA-Z]+" data/background.js data/options.js
 ```

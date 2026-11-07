@@ -12,7 +12,7 @@ import { stubBrowser } from '../stub'
  * that throws fails the test.
  *
  * Playwright cannot load an extension into Firefox, so the pages are opened
- * from data/ as files, and stubBrowser() (../stub.ts) stands in for the WebExtension
+ * from the built add-on's data/ (dist/firefox, scripts/build.mjs) as files, and stubBrowser() (../stub.ts) stands in for the WebExtension
  * `chrome` API they call. The context menu itself is browser UI that no
  * screenshot can show; the hint page is opened the way the menu opens it,
  * through background.js's click handler. */
@@ -26,7 +26,8 @@ const ROOT = fileURLToPath(new URL('../..', import.meta.url))
 const OUT = path.resolve(process.env.DOCS_SCREENSHOT_DIR ?? path.join(ROOT, 'docs/screenshots'))
 mkdirSync(OUT, { recursive: true })
 
-const OPTIONS = pathToFileURL(path.join(ROOT, 'data/options.html')).href
+const ADDON_DIR = path.join(ROOT, 'dist/firefox')
+const OPTIONS = pathToFileURL(path.join(ADDON_DIR, 'data/options.html')).href
 const MANTIS_URL = 'https://mantis.example.com/'
 
 let pageErrors: Error[] = []
@@ -139,7 +140,7 @@ test('options: contrast, and a window shorter than the form', async ({ page }) =
 
 test('context menu: no single issue number in the selection', async ({ page }) => {
   await optionsPage(page, `${MANTIS_URL}view.php?id=`)
-  await page.addScriptTag({ path: path.join(ROOT, 'data/background.js') })
+  await page.addScriptTag({ path: path.join(ADDON_DIR, 'data/background.js') })
   // What a click on "Open “Issues 12 and 34” in Mantis" does.
   const tabs = await page.evaluate(async () => {
     await menuClick({ menuItemId: 'openInMantis', selectionText: 'Issues 12 and 34' }, { id: 1, index: 0, windowId: 1 })

@@ -1,24 +1,16 @@
 {
-  "name": "mantis-helper-firefox",
+  "name": "mantis-helper",
   "private": true,
   "license": "MIT",
   "scripts": {
-    "lint": "web-ext lint --warnings-as-errors",
-    "test": "node --test tests/*.test.mjs",
-    "build": "web-ext build --overwrite-dest"
+    "build": "node scripts/build.mjs && web-ext build -s dist/chrome -a dist -n mantis-helper-chrome-{version}.zip -o && web-ext build -s dist/firefox -a dist -n mantis-helper-firefox-{version}.zip -o",
+    "lint": "eslint --max-warnings 0 . && node scripts/build.mjs && web-ext lint -s dist/firefox --warnings-as-errors",
+    "test": "node --test tests/*.test.mjs"
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.13.0",
+    "globals": "17.13.0",
     "web-ext": "^10.8.0"
-  },
-  "webExt": {
-    "ignoreFiles": [
-      "docs",
-      "e2e",
-      "scripts",
-      "tests",
-      "web-ext-artifacts",
-      "package.json",
-      "package-lock.json"
-    ]
   }
 }
