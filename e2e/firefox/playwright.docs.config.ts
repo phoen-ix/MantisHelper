@@ -5,11 +5,11 @@ import { defineConfig, devices } from '@playwright/test'
 /* The docs tour (./docs): screenshots of the extension's own pages, and a
  * render check of every page it shows. Playwright cannot load an extension
  * into Firefox, so the tour opens the pages from data/ as files and stubs the
- * `browser` API they use (see docs/tour.spec.ts):
+ * `chrome` API they use (see docs/tour.spec.ts):
  *
- *   npx playwright test -c playwright.docs.config.ts
+ *   npx playwright test -c firefox/playwright.docs.config.ts      # in e2e/
  *
- * Screenshots land in ../docs/screenshots (DOCS_SCREENSHOT_DIR overrides).
+ * Screenshots land in ../../docs/screenshots/firefox (DOCS_SCREENSHOT_DIR overrides).
  * scripts/docs-screenshots.sh wraps it. */
 export default defineConfig({
   testDir: './docs',

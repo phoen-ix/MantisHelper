@@ -22,8 +22,8 @@ declare const chrome: any
 declare const menuClick: (info: object, tab: object) => Promise<void>
 declare const createdTabs: { url: string }[]
 
-const ROOT = fileURLToPath(new URL('../..', import.meta.url))
-const OUT = path.resolve(process.env.DOCS_SCREENSHOT_DIR ?? path.join(ROOT, 'docs/screenshots'))
+const ROOT = fileURLToPath(new URL('../../..', import.meta.url))
+const OUT = path.resolve(process.env.DOCS_SCREENSHOT_DIR ?? path.join(ROOT, 'docs/screenshots/firefox'))
 mkdirSync(OUT, { recursive: true })
 
 const ADDON_DIR = path.join(ROOT, 'dist/firefox')

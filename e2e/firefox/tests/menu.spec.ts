@@ -21,13 +21,32 @@ test('the menu is registered when the add-on is installed', async ({ addon }) =>
 })
 
 // Firefox still has the menu when onInstalled fires after a browser update: the
-// duplicate id turns into an update (an unchecked runtime.lastError would fail the test).
+// duplicate id must turn into an update of the menu.
 test('setting the menu up again while it exists updates it', async ({ addon }) => {
-  await addon.background.evaluate(async () => {
-    setUpMenu()
-    // Answered after create(), so its callback has run.
-    await chrome.contextMenus.update('openInMantis', {})
+  const calls = await addon.background.evaluate(async () => {
+    const calls: unknown[] = []
+    const { create, update } = chrome.contextMenus
+    let settled = () => {}
+    const created = new Promise<void>((resolve) => (settled = resolve))
+    chrome.contextMenus.create = (props: object, done?: () => void) => (
+      calls.push(['create', props]),
+      create(props, () => (calls.push(['created', chrome.runtime.lastError?.message]), done?.(), settled()))
+    )
+    chrome.contextMenus.update = (id: string, props: object) => (calls.push(['update', id, props]), update(id, props))
+    try {
+      setUpMenu()
+      await created
+    } finally {
+      Object.assign(chrome.contextMenus, { create, update })
+    }
+    return calls
   })
+  const menu = { title: 'Open “%s” in Mantis', contexts: ['selection'] }
+  expect(calls).toEqual([
+    ['create', { id: 'openInMantis', ...menu }],
+    ['created', 'The menu id openInMantis already exists in menus.create.'],
+    ['update', 'openInMantis', menu],
+  ])
 })
 
 // What the menu is, and that Firefox firing onInstalled again (after a browser

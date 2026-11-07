@@ -1,8 +1,9 @@
 # E2E coverage
 
 Inventory of what Mantis Helper does for a user, each mapped to the test that drives it
-(`spec › test title`, specs in `e2e/tests/`) or to the reason it is not driven here.
-Run the suite with `scripts/e2e.sh`.
+(`spec › test title`, specs in `e2e/firefox/tests/`) or to the reason it is not driven here.
+Run the suite with `scripts/e2e.sh firefox`. The Chrome suite has its own inventory:
+[`e2e/chrome/COVERAGE.md`](../chrome/COVERAGE.md).
 
 Extraction (2026-10-31, 24 items: manifest pages, scripts and permissions, the pages in `data/`,
 every listener and `chrome.*` call):
@@ -72,7 +73,7 @@ Totals: **30 rows: ✅ 24, ❌ 6** — (c) 2, (d) 3, (e) 1.
 | Enter saves; typing again clears "Options saved." | ✅ `options.spec.ts › Enter saves, and typing again clears the confirmation` |
 | Save in the installed add-on's options tab → `storage.sync` → the menu uses it | ✅ `menu.spec.ts › configure the options, then open a selected issue` |
 | Opened from `about:addons` > Mantis Helper > Options | ❌ (d) about:addons is a privileged browser page Playwright cannot drive; `runtime.openOptionsPage()` (the same page in a tab) is driven by the "opens the options instead" rows |
-| Contrast (WCAG AA) and a window shorter than the form | ✅ `docs/tour.spec.ts › options: contrast, and a window shorter than the form` (docs tour, CI job `docs-tour`) |
+| Contrast (WCAG AA) and a window shorter than the form | ✅ `docs/tour.spec.ts › options: contrast, and a window shorter than the form` (docs tour, CI job `docs-tour` firefox) |
 
 ## Package
 

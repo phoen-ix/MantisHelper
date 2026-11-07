@@ -1,9 +1,17 @@
 name: CI
 
+# Job lint: ESLint, web-ext lint of the Firefox package (the validator
+# addons.mozilla.org runs on upload) and the unit tests of data/mantis.js.
+# Job build: both store packages (npm run build), as the artifacts
+# mantis-helper-chrome and mantis-helper-firefox.
+# Jobs docs-tour and e2e, per browser: the docs tour (e2e/<browser>/docs/) as a
+# render check, its screenshots in the runner's temp dir (docs-screenshots.yml
+# hands them out), and the e2e suite (scripts/e2e.sh, e2e/<browser>/COVERAGE.md),
+# its results and traces as the `e2e-run-<browser>` artifact when it fails.
 on:
   push:
     branches: [master]
-  pull_request:
+  pull_request: {}
 
 permissions:
   contents: read
@@ -20,14 +28,44 @@ jobs:
 
       - run: npm ci --no-audit --no-fund
 
-      # The validator addons.mozilla.org runs on upload.
       - run: npm run lint
 
       - run: npm test
 
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '26'
+
+      - run: npm ci --no-audit --no-fund
+
+      - run: npm run build
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mantis-helper-chrome
+          path: dist/mantis-helper-chrome-*.zip
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mantis-helper-firefox
+          path: dist/mantis-helper-firefox-*.zip
+          if-no-files-found: error
+
   docs-tour:
-    name: Docs screenshots (render check)
+    name: Docs screenshots (render check, ${{ matrix.browser }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { browser: firefox, playwright: firefox }
+          - { browser: chrome, playwright: chromium }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -39,17 +77,20 @@ jobs:
         working-directory: e2e
         run: |
           npm ci --no-audit --no-fund
-          npx playwright install --with-deps firefox
+          npx playwright install --with-deps ${{ matrix.playwright }}
 
-      # The screenshots go to a temp dir; docs-screenshots.yml makes the ones to commit.
       - name: Run the docs tour
-        run: ARTIFACTS="$RUNNER_TEMP/docs-run" scripts/docs-screenshots.sh "$RUNNER_TEMP/screenshots"
+        run: ARTIFACTS="$RUNNER_TEMP/docs-run" bash scripts/docs-screenshots.sh "$RUNNER_TEMP/screenshots" ${{ matrix.browser }}
 
-  # The e2e suite (e2e/tests/, e2e/COVERAGE.md): the add-on installed into
-  # headless Firefox, and its pages. Traces of failed tests are uploaded.
   e2e:
-    name: E2E
+    name: E2E (${{ matrix.browser }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { browser: firefox, playwright: firefox }
+          - { browser: chrome, playwright: chromium }
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -61,14 +102,14 @@ jobs:
         working-directory: e2e
         run: |
           npm ci --no-audit --no-fund
-          npx playwright install --with-deps firefox
+          npx playwright install --with-deps ${{ matrix.playwright }}
 
       - name: Run the e2e suite
-        run: ARTIFACTS="$RUNNER_TEMP/e2e-run" scripts/e2e.sh
+        run: ARTIFACTS="$RUNNER_TEMP/e2e-run" bash scripts/e2e.sh ${{ matrix.browser }}
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: failure()
         with:
-          name: e2e-run
+          name: e2e-run-${{ matrix.browser }}
           path: ${{ runner.temp }}/e2e-run/
           retention-days: 7

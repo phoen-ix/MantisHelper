@@ -25,7 +25,7 @@ import { slowStorageReads, stubBrowser } from './stub'
 
 export const MANTIS = 'https://mantis.example.com/'
 export const SOURCE = 'https://intranet.example.com/notes'
-export const ROOT = fileURLToPath(new URL('..', import.meta.url))
+export const ROOT = fileURLToPath(new URL('../..', import.meta.url))
 /** The add-on as it ships: `node scripts/build.mjs` (scripts/e2e.sh runs it). */
 export const ADDON_DIR = path.join(ROOT, 'dist/firefox')
 

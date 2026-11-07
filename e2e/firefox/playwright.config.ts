@@ -2,10 +2,10 @@ import { defineConfig, devices } from '@playwright/test'
 
 /* The e2e suite (./tests, inventory in COVERAGE.md): the add-on installed into
  * headless Firefox (fixtures.ts), its click handler and the pages it opens, and
- * its pages opened as files with a stubbed `browser` API for what a user does
+ * its pages opened as files with a stubbed `chrome` API for what a user does
  * in them.
  *
- *   npx playwright test            # scripts/e2e.sh wraps it
+ *   npx playwright test -c firefox/playwright.config.ts      # in e2e/; scripts/e2e.sh firefox wraps it
  *
  * The docs tour has its own config (playwright.docs.config.ts). */
 export default defineConfig({
